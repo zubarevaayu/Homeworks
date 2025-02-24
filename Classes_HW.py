@@ -1,40 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# #### Задание 1. Наследование
-# 
-# Исходя из квиза к предыдущему занятию, у нас уже есть класс преподавателей и класс студентов (вы можете взять этот код за основу или написать свой). Студентов пока оставим без изменения, а вот преподаватели бывают разные, поэтому теперь класс Mentor должен стать родительским классом, а от него нужно реализовать наследование классов Lecturer (лекторы) и Reviewer (эксперты, проверяющие домашние задания). Очевидно, имя, фамилия и список закрепленных курсов логично реализовать на уровне родительского класса. А чем же будут специфичны дочерние классы? Об этом в следующих заданиях.
-
-# #### Задание 2. Атрибуты и взаимодействие классов.
-# 
-# В квизе к предыдущей лекции мы реализовали возможность выставлять студентам оценки за домашние задания. Теперь это могут делать только Reviewer (реализуйте такой метод). А что могут делать лекторы? Получать оценки за лекции от студентов :) Реализуйте метод выставления оценок лекторам у класса Student (оценки по 10-балльной шкале, хранятся в атрибуте-словаре у Lecturer, в котором ключи – названия курсов, а значения – списки оценок). Лектор при этом должен быть закреплен за тем курсом, на который записан студент.
-
-# #### Задание № 3. Полиморфизм и магические методы
-# 
-# Перегрузите магический метод __str__ у всех классов.
-# 
-# У проверяющих он должен выводить информацию в следующем виде:
-# print(some_reviewer)
-# Имя: Some
-# Фамилия: Buddy
-# 
-# У лекторов:
-# print(some_lecturer)
-# Имя: Some
-# Фамилия: Buddy
-# Средняя оценка за лекции: 9.9
-# 
-# А у студентов так:
-# print(some_student)
-# Имя: Ruoy
-# Фамилия: Eman
-# Средняя оценка за домашние задания: 9.9
-# Курсы в процессе изучения: Python, Git
-# Завершенные курсы: Введение в программирование
-# 
-# Реализуйте возможность сравнивать (через операторы сравнения) между собой лекторов по средней оценке за лекции и студентов по средней оценке за домашние задания.
-
-# In[1]:
+# In[3]:
 
 
 # Для начала нужно описать класс студента. У каждого студента должны быть следующие атрибуты класса:
@@ -63,7 +30,7 @@ class Student:
         (оценки по 10-балльной шкале, хранятся в атрибуте-словаре у Lecturer, в котором ключи – названия курсов,
         а значения – списки оценок). Лектор при этом должен быть закреплен за тем курсом, на который записан студент.
         """
-        if isinstance(lecturer, Lecturer) and course in self.courses_in_progress and course in lecturer.courses_attached:
+        if (isinstance(lecturer, Lecturer) and course in self.courses_in_progress and course in lecturer.courses_attached):
             if course in lecturer.grades:
                 lecturer.grades[course] += [grade]
             else:
@@ -73,10 +40,11 @@ class Student:
     
     def student_avg_grade(self):
         """Метод расчета средней оценки за домашние задания по всем курсам """
-        res = []
-        for grade in self.grades.values():
-            res.extend(grade)
-            return float(sum(res) / len(res))
+        list_grade = self.grades.values()
+        sum_grade = 0
+        for grade in list_grade:
+            sum_grade += sum(grade)
+            return sum_grade / len(grade)
         
     def __str__(self):
         courses_in_progress_string = ', '.join(self.courses_in_progress)
@@ -87,8 +55,13 @@ class Student:
               f'Курсы в процессе изучения: {courses_in_progress_string}\n' \
               f'Завершенные курсы: {finished_courses_string}'
         return res
-
     
+    def __lt__(self, other_student):
+        """Создаём метод, который сравнивает (через оператор сравнения <=) между собой студентов по средней оценке 
+        за домашние задания.""" 
+        if isinstance(other_student, Student):
+            return self.student_avg_grade() < other_student.student_avg_grade()
+
     
 # Какое учебное заведение без преподавателей? Объявим соответствующий класс (у преподавателей есть закрепленный за ними список курсов) 
 
@@ -107,22 +80,25 @@ class Lecturer(Mentor):
     
     def avg_grade(self):
         """ Метод вычисления средней оценки студентов лектора по тому курсу, который он преподает """
-        res = []
-        for grade in self.grades.values():
-            res.extend(grade)
-            return float(sum(res) / len(res))
+        list_grade = self.grades.values()
+        sum_grade = 0
+        for grade in list_grade:
+            sum_grade += sum(grade)
+            return float(sum_grade / len(grade))
         
     def __str__(self):
         return f' Имя: {self.name} \n Фамилия: {self.surname} \n Средняя оценка за лекции: {self.avg_grade()}'  
 
     
-
+    def __lt__(self, other_lecturer): 
+        """Создаём метод, который сравнивает (через оператор сравнения <=) между собой лекторов по средней оценке 
+        от студентов.""" 
+        if isinstance(other_lecturer, Lecturer): 
+            return self.avg_grade() < other_lecturer.avg_grade()
 
 # Класс Reviewer наследует имя, фамилия и список закрепленные курсы от родительского класса Mentor.
 
 class Reviewer(Mentor): #эксперты, проверяющие домашние задания
-    def __init__(self, name, surname): 
-        super().__init__(name, surname)
         
     # И самое главное – реализуем взаимодействие классов на основе выставления преподавателями оценок студентам.
 
@@ -143,16 +119,10 @@ class Reviewer(Mentor): #эксперты, проверяющие домашни
         return f'Имя: {self.name} \n Фамилия: {self.surname}'
 
 
-# #### Задание № 4. Полевые испытания
-# 
-# Создайте по 2 экземпляра каждого класса, вызовите все созданные методы, а также реализуйте две функции:
-# 
-# для подсчета средней оценки за домашние задания по всем студентам в рамках конкретного курса (в качестве аргументов принимаем список студентов и название курса);
-# для подсчета средней оценки за лекции всех лекторов в рамках курса (в качестве аргумента принимаем список лекторов и название курса).
 
 # #### Students
 
-# In[2]:
+# In[4]:
 
 
 # создадим по экземпляру наших классов и проверим содержимое атрибутов. 
@@ -165,7 +135,7 @@ best_student.grades['Git'] = [10, 10, 10, 10, 10]
 best_student.grades['Python'] = [10, 10]
 
 
-# In[3]:
+# In[5]:
 
 
 student2 = Student('Elena', 'Ivanova', 'female')
@@ -175,32 +145,44 @@ student2.grades['SQL'] = [8, 9, 10, 9, 10]
 student2.grades['Java'] = [8, 9]
 
 
+# In[6]:
+
+
+student_list = [best_student, student2]
+
+
 # #### Lecturers
 
-# In[4]:
+# In[7]:
 
 
 lecturer1 = Lecturer('Olga', 'Petrova')
 lecturer1.courses_attached += ['Python']
 
 
-# In[5]:
+# In[8]:
 
 
 lecturer2 = Lecturer('Ivan', 'Smirnov')
 lecturer2.courses_attached += ['Java']
 
 
+# In[9]:
+
+
+lecturer_list = [lecturer1, lecturer2]
+
+
 # #### Reviewers
 
-# In[6]:
+# In[10]:
 
 
 reviewer1 = Reviewer('Alexander', 'Kozlov')
 reviewer1.courses_attached += ['Python']
 
 
-# In[7]:
+# In[11]:
 
 
 reviewer2 = Reviewer('John', 'Smith')
@@ -209,61 +191,61 @@ reviewer2.courses_attached += ['Java']
 
 # #### Оцениваем лекторов
 
-# In[8]:
+# In[12]:
 
 
 best_student.rate_lecturer(lecturer1, 'Python', 10)
 
 
-# In[9]:
+# In[13]:
 
 
 best_student.rate_lecturer(lecturer1, 'Java', 10)
 
 
-# In[10]:
+# In[14]:
 
 
 best_student.rate_lecturer(lecturer2, 'Python', 10)
 
 
-# In[11]:
+# In[15]:
 
 
 best_student.rate_lecturer(lecturer2, 'Java', 10)
 
 
-# In[12]:
+# In[16]:
 
 
 student2.rate_lecturer(lecturer1, 'Python', 10)
 
 
-# In[13]:
+# In[17]:
 
 
 student2.rate_lecturer(lecturer1, 'Java', 10)
 
 
-# In[14]:
+# In[18]:
 
 
 student2.rate_lecturer(lecturer2, 'Python', 10)
 
 
-# In[15]:
+# In[19]:
 
 
 student2.rate_lecturer(lecturer2, 'Java', 9)
 
 
-# In[16]:
+# In[20]:
 
 
 student2.rate_lecturer(lecturer2, 'Java', 7)
 
 
-# In[17]:
+# In[21]:
 
 
 best_student.rate_lecturer(lecturer1, 'Python', 9)
@@ -271,49 +253,49 @@ best_student.rate_lecturer(lecturer1, 'Python', 9)
 
 # #### Оцениваем студентов
 
-# In[18]:
+# In[22]:
 
 
 reviewer1.rate_hw(best_student, 'Python', 10)
 
 
-# In[19]:
+# In[23]:
 
 
 reviewer1.rate_hw(student2, 'Python', 10)
 
 
-# In[20]:
+# In[24]:
 
 
 reviewer1.rate_hw(best_student, 'Java', 10)
 
 
-# In[21]:
+# In[25]:
 
 
 reviewer1.rate_hw(student2, 'Java', 10)
 
 
-# In[22]:
+# In[26]:
 
 
 reviewer2.rate_hw(best_student, 'Python', 9)
 
 
-# In[23]:
+# In[27]:
 
 
 reviewer2.rate_hw(student2, 'Python', 9)
 
 
-# In[24]:
+# In[28]:
 
 
 reviewer2.rate_hw(best_student, 'Java', 9)
 
 
-# In[25]:
+# In[29]:
 
 
 reviewer2.rate_hw(student2, 'Java', 9)
@@ -321,106 +303,92 @@ reviewer2.rate_hw(student2, 'Java', 9)
 
 # #### Перегружаем магический метод str у всех классов
 
-# In[26]:
+# In[30]:
 
 
 print(best_student)
 
 
-# In[27]:
+# In[31]:
 
 
 print(student2)
 
 
-# In[28]:
+# In[32]:
 
 
 print(lecturer1)
 
 
-# In[29]:
+# In[33]:
 
 
 print(lecturer2)
 
 
-# In[30]:
+# In[34]:
 
 
 print(reviewer1)
 
 
-# In[31]:
+# In[35]:
 
 
 print(reviewer2)
 
 
-# In[32]:
-
-
-from functools import total_ordering
-
-@total_ordering
-
-class Student:    
-    def __lt__(self, other): 
-        """Создаём метод, который сравнивает (через оператор сравнения <=) между собой студентов по средней оценке 
-        за домашние задания.""" 
-        if not isinstance(other, Student): 
-            print('Невозможно сравнить!') 
-        return self.student_avg_grade() < other.student_avg_grade()
-    
-    def __gt__(self, other): 
-        """Создаём метод, который сравнивает (через операторы сравнения >=) между собой студентов по средней оценке 
-        за домашние задания.""" 
-        if not isinstance(other, Student): 
-            print('Невозможно сравнить!') 
-        return self.student_avg_grade() > other.student_avg_grade()
-    
-
-
-# In[33]:
-
-
-@total_ordering
-class Lecturer(Mentor):
-    def __lt__(self, other): 
-        """Создаём метод, который сравнивает (через оператор сравнения <=) между собой лекторов по средней оценке 
-        от студентов.""" 
-        if not isinstance(other, Student): 
-            print('Невозможно сравнить!') 
-        return self.avg_grade() < other.avg_grade()
-    
-    def __gt__(self, other): 
-        """Создаём метод, который сравнивает (через операторы сравнения >=) между собой лекторов по средней оценке 
-        от студентов.""" 
-        if not isinstance(other, Student): 
-            print('Невозможно сравнить!') 
-        return self.avg_grade() > other.avg_grade()
-
-
-# In[34]:
+# In[36]:
 
 
 best_student.__lt__(student2)
 
 
-# In[35]:
+# In[37]:
 
 
 student2.__lt__(best_student)
 
 
-# In[36]:
+# In[40]:
 
 
-best_student.__gt__(student2)
+student_list = [best_student, student2]
+
+def medium_grade_student(student_list, course):
+    """ Функция для подсчета средней оценки за домашние задания по всем студентам в рамках конкретного курса 
+    (в качестве аргументов принимаем список студентов и название курса)
+    """
+    sum_grade = 0
+    count_grade = 0
+    for student in student_list:
+        if course in student.grades:
+            sum_grade += sum(student.grades[course])
+            count_grade += len(student.grades[course])
+    return sum_grade / count_grade
+
+print(medium_grade_student(student_list, 'Python'))
+print(medium_grade_student(student_list, 'Java'))
 
 
-# In[37]:
+# In[41]:
 
 
-student2.__gt__(best_student)
+lecturer_list = [lecturer1, lecturer2]
+
+def medium_grade_lecturer(lecturer_list, course):
+    """для подсчета средней оценки за лекции всех лекторов в рамках курса 
+    (в качестве аргумента принимаем список лекторов и название курса)
+    """
+    sum_grade = 0
+    count_grade = 0
+    for lecturer in lecturer_list:
+        if course in lecturer.grades:
+            sum_grade += sum(lecturer.grades[course])
+            count_grade += len(lecturer.grades[course])
+    return sum_grade / count_grade
+
+print(medium_grade_lecturer(lecturer_list, 'Python'))
+print(medium_grade_lecturer(lecturer_list, 'Java'))
 
